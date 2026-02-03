@@ -62,30 +62,29 @@ public:
     }
 
     //Function 06: Delete or deallocate memories
-        ~LinkedListImplementation() {
-            //Destructor to deallocate memory
-            Node* temp = head;
-            Node* nextNode = nullptr
+    ~LinkedListImplementation() {
+        //Destructor to deallocate memory
+        Node* temp = head;
+        Node* nextNode = nullptr;
 
-            while (temp != nullptr) {
-                nextNode = current->next;
-                delete temp;
-                temp = nextNode;
-            }
+        while (temp != nullptr) {
+            nextNode = temp->next;
+            delete temp;
+            temp = nextNode;
         }
+    }
 
-        //Function 07: Delete from a given node value
-        void deleteNode(int value) {
-            if (head == nullptr){
-                cout << "List is empty. Cannot delete." << endl;
-                return;
-            }
+    //Function 07: Delete from a given node value
+    void deleteNode(int value) {
+        if (head == nullptr){
+            cout << "List is empty. Cannot delete." << endl;
+            return;
         }
 
         Node* current = head;
-        //Traverse the list to find the nde with the given value
+        //Traverse the list to find the node with the given value
         Node* prev = nullptr;
-        while (current != nullptr && current-> data != value) {
+        while (current != nullptr && current->data != value) {
             prev = current;
             current = current->next;
         }
@@ -96,18 +95,24 @@ public:
             return;
         }
 
-        //Update the previous nodes next pointer to skip the current node
-        prev->next = current->next;
+        //If deleting the head node
+        if (prev == nullptr) {
+            head = current->next;
+        } else {
+            //Update the previous nodes next pointer to skip the current node
+            prev->next = current->next;
+        }
 
-        //Free the memory of the node to b deleted
+        //Free the memory of the node to be deleted
         delete current;
+    }
 
     // Display list (helper)
     void display() {
         Node* current = head;
         while (current != nullptr) {
             cout << current->data << " -> ";
-            temp = current->next;
+            current = current->next;
         }
         cout << "NULL\n";
     }

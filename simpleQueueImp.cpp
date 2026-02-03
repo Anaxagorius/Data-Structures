@@ -1,47 +1,75 @@
 #include <iostream>
 using namespace std;
 
+// ============================================================================
 // STUDY NOTE: `using namespace std;`
-// This is fine for small learning programs, but in larger projects it can
-// cause name collisions (brings the entire std namespace into current scope).
-// Many best-practice discussions recommend avoiding it at global scope.
-// (Stack Overflow, 2024). [5](https://stackoverflow.com/questions/1452721/whats-the-problem-with-using-namespace-std)
+// ----------------------------------------------------------------------------
+// This is common in beginner examples because it keeps code shorter (cout instead
+// of std::cout). However, in larger projects it can cause naming collisions
+// because it imports *all* names from std into the current scope.
+// (Stack Overflow, 2024). [4](https://stackoverflow.com/questions/4872373/why-is-including-using-namespace-into-a-header-file-a-bad-idea-in-c)
+//
+// For coursework examples, it's usually acceptable. For production code, prefer:
+//   std::cout << "...";
+// ============================================================================
 
 
 // ============================================================================
-// SimpleQueue (Array-Based, Fixed-Size Queue)
+// SimpleQueue (Array-Based, Fixed-Size Queue) — STUDY GUIDE VERSION
 // ----------------------------------------------------------------------------
-// BIG IDEA: A queue is FIFO (First-In, First-Out):
-// - The first item enqueued is the first item dequeued.
-// - Enqueue adds to the REAR (end).
+// BIG IDEA: Queue = FIFO (First-In, First-Out)
+// - The first element inserted is the first element removed.
+// - Enqueue adds at the REAR (end).
 // - Dequeue removes from the FRONT (beginning).
-// (GeeksforGeeks, 2025; Tutorialspoint, n.d.). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)[3](https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm)
+// (GeeksforGeeks, 2025; Tutorialspoint, n.d.). [1](https://cplusplus.com/doc/tutorial/dynamic/)[2](https://en.cppreference.com/w/cpp/language/namespace.html)
 //
-// This implementation uses:
-// - a fixed-size array: queue_array[MAX_SIZE]
-// - integer indices: front and rear
+// HOW THIS IMPLEMENTATION WORKS:
+// - Uses a fixed-size array (capacity is MAX_SIZE).
+// - Uses two indices:
+//     front -> index of the current front element (next to remove)
+//     rear  -> index of the current rear element (last inserted)
 //
-// LIMITATION (Important Study Note):
-// This is a *simple linear queue*, not a circular queue.
-// That means once `rear` reaches MAX_SIZE - 1, the queue reports overflow,
-// even if earlier elements have been dequeued (front moved forward).
-// This can "waste" space at the beginning of the array.
-// A circular queue fixes this by wrapping indices around.
-// (GeeksforGeeks, 2025; ProgramGuru, n.d.). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)[2](https://programguru.org/programming/queues/)
+// EMPTY STATE:
+// - front = -1 and rear = -1 means "nothing has ever been enqueued yet".
+// - Also, if front > rear, that means we've dequeued past the last element,
+//   so the queue is logically empty.
+//
+// IMPORTANT LIMITATION (VERY TEST-WORTHY):
+// This is a simple LINEAR queue, not a circular queue.
+// - Once rear reaches MAX_SIZE - 1, it reports overflow.
+// - This can happen even if there is unused space at the beginning of the array
+//   after multiple dequeues.
+// A circular queue fixes this by wrapping indices around (mod arithmetic).
+// (GeeksforGeeks, 2025; ProgramGuru, n.d.). [1](https://cplusplus.com/doc/tutorial/dynamic/)[3](https://intellipaat.com/blog/new-and-delete-operators-in-cpp/)
+//
+// TIME COMPLEXITY (in this version):
+// - enqueue: O(1)  (just index math + assignment)
+// - dequeue: O(1)  (just index math + read)
+// - peek:    O(1)
+// - display: O(n)  (prints all elements in range)
+// (Array-based queue operations described in common references). [1](https://cplusplus.com/doc/tutorial/dynamic/)[2](https://en.cppreference.com/w/cpp/language/namespace.html)
+//
+// API NOTE (Sentinel Return):
+// dequeue() and peek() return -1 on underflow/empty.
+// This can be unsafe if -1 is a valid queue value; modern designs may use
+// exceptions or std::optional<int>. We keep -1 for least impact.
+// (Overflow/underflow discussion appears in array-queue explanations). [1](https://cplusplus.com/doc/tutorial/dynamic/)
 // ============================================================================
 
 class SimpleQueue {
-    static const int MAX_SIZE = 10;      // maximum capacity of queue (fixed-size)
-    int queue_array[MAX_SIZE];           // storage for elements (array-based queue)
-    int front;                           // index of the front element
-    int rear;                            // index of the rear element
+    static const int MAX_SIZE = 10;   // Capacity (fixed size) [1](https://cplusplus.com/doc/tutorial/dynamic/)
+    int queue_array[MAX_SIZE];        // Storage for queue elements
+    int front;                        // Front index (next to be dequeued)
+    int rear;                         // Rear index  (last enqueued)
 
 public:
     // ------------------------------------------------------------------------
-    // Constructor: initialize empty queue state
-    // Common convention for array queues:
-    // - front = -1 and rear = -1 indicates "empty"
-    // (Tutorialspoint describes queue usage with front/rear pointers). [3](https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm)
+    // Constructor: initialize empty queue
+    //
+    // Convention:
+    // - front = rear = -1 indicates "empty/unused".
+    // This is a common approach in simple array queue implementations.
+    // (Tutorialspoint, n.d.). [2](https://en.cppreference.com/w/cpp/language/namespace.html)
     // ------------------------------------------------------------------------
     SimpleQueue() {
         front = -1;
@@ -49,30 +77,40 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    // Helper: check if the queue is "full" (overflow condition)
+    // isFull(): overflow check
     //
-    // In THIS simple design, we treat the queue as full when rear reaches
-    // MAX_SIZE - 1 (end of array).
-    //
-    // STUDY NOTE: This is why space can be wasted:
-    // even if front > 0 (we dequeued some items),
-    // rear still might be stuck at the end.
-    // (GeeksforGeeks, 2025). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)
+    // In this LINEAR design:
+    // - the queue is "full" when rear hits the last array index.
+    // - it does NOT reuse freed space at the front.
+    // (GeeksforGeeks, 2025). [1](https://cplusplus.com/doc/tutorial/dynamic/)
     // ------------------------------------------------------------------------
     bool isFull() const {
         return (rear == MAX_SIZE - 1);
     }
 
     // ------------------------------------------------------------------------
-    // enqueue(data): add to REAR (end)
+    // isEmpty(): empty check
     //
-    // FIFO rule: items join at the rear/end. (GeeksforGeeks, 2025). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)
+    // Queue is empty when:
+    // - front == -1 (nothing ever enqueued), OR
+    // - front > rear (we dequeued everything)
+    // (Tutorialspoint, n.d.). [2](https://en.cppreference.com/w/cpp/language/namespace.html)
+    // ------------------------------------------------------------------------
+    bool isEmpty() const {
+        return (front == -1 || front > rear);
+    }
+
+    // ------------------------------------------------------------------------
+    // enqueue(data): insert at REAR
+    //
+    // FIFO rule: elements enter at the rear/end of the queue.
+    // (GeeksforGeeks, 2025). [1](https://cplusplus.com/doc/tutorial/dynamic/)
     //
     // Steps:
     // 1) If full -> overflow
     // 2) If first insert -> set front = 0
-    // 3) Increment rear
-    // 4) Store data at queue_array[rear]
+    // 3) rear++
+    // 4) store element at queue_array[rear]
     // ------------------------------------------------------------------------
     void enqueue(int data) {
         if (isFull()) {
@@ -80,7 +118,7 @@ public:
             return;
         }
 
-        // If queue was empty, front is initialized on first enqueue.
+        // First enqueue initializes front to 0 (first valid index).
         if (front == -1) {
             front = 0;
         }
@@ -92,27 +130,19 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    // dequeue(): remove from FRONT (beginning)
+    // dequeue(): remove from FRONT
     //
-    // FIFO rule: items leave from the front/beginning. (Tutorialspoint, n.d.). [3](https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm)
+    // FIFO rule: elements leave from the front/beginning.
+    // (Tutorialspoint, n.d.). [2](https://en.cppreference.com/w/cpp/language/namespace.html)
     //
-    // Underflow condition:
-    // - If the queue is empty, we cannot dequeue.
-    // - Here, emptiness is detected if:
-    //     front == -1 OR front > rear
-    //
-    // IMPORTANT API NOTE:
-    // Returning -1 is a "sentinel value" and can be unsafe if -1 is valid data.
-    // Alternatives:
-    // - throw an exception
-    // - return bool and use an output parameter
-    // - return std::optional<int> (modern approach)
-    // (General overflow/underflow conditions are discussed in array-queue writeups). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)
+    // Underflow:
+    // - If empty, cannot dequeue -> print message + return -1 sentinel.
+    // (GeeksforGeeks, 2025). [1](https://cplusplus.com/doc/tutorial/dynamic/)
     // ------------------------------------------------------------------------
     int dequeue() {
         if (isEmpty()) {
             cout << "Queue Underflow. Cannot dequeue from an empty queue." << endl;
-            return -1; // sentinel error value
+            return -1; // sentinel
         }
 
         int dequeued_data = queue_array[front];
@@ -123,42 +153,29 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    // isEmpty(): check empty state
+    // peek(): look at the front element without removing it
     //
-    // In this design, the queue is empty when:
-    // - front == -1 (never enqueued), OR
-    // - front > rear (we dequeued past last element)
+    // This matches the typical queue "front" / "peek" operation:
+    // - shows what will be dequeued next.
+    // (ProgramGuru, n.d.). [3](https://intellipaat.com/blog/new-and-delete-operators-in-cpp/)
     //
-    // This matches the “front and rear pointer” style described in common
-    // queue explanations. (Tutorialspoint, n.d.). [3](https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm)
-    // ------------------------------------------------------------------------
-    bool isEmpty() const {
-        return (front == -1 || front > rear);
-    }
-
-    // ------------------------------------------------------------------------
-    // peek(): view the front element without removing it
-    //
-    // This is the "Front" operation in queue ADT: inspect what will be removed next
-    // (FIFO: next-out is at the front). (ProgramGuru, n.d.). [2](https://programguru.org/programming/queues/)
-    //
-    // Same sentinel risk applies if queue is empty.
+    // If empty, prints message + returns sentinel (-1).
     // ------------------------------------------------------------------------
     int peek() const {
         if (isEmpty()) {
             cout << "Queue is empty. No front element." << endl;
-            return -1; // sentinel
+            return -1;
         }
         return queue_array[front];
     }
 
     // ------------------------------------------------------------------------
-    // display(): print queue elements from front to rear
+    // display(): print elements from front to rear
     //
-    // This helps visualize FIFO order:
-    // - front is the next element to be dequeued
-    // - rear is the most recently enqueued element
-    // (FIFO definition: first inserted removed first). [1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)[2](https://programguru.org/programming/queues/)
+    // This visualizes FIFO order:
+    // - front is next-out
+    // - rear is most recent in
+    // (Queue FIFO definition and operations). [1](https://cplusplus.com/doc/tutorial/dynamic/)[3](https://intellipaat.com/blog/new-and-delete-operators-in-cpp/)
     // ------------------------------------------------------------------------
     void display() const {
         if (isEmpty()) {
@@ -176,20 +193,24 @@ public:
 
 
 // ============================================================================
-// Optional: quick test harness (uncomment to run)
+// TEST HARNESS (main) — Demonstrates core queue behaviors
 // ----------------------------------------------------------------------------
-// This shows:
-// - Enqueue until overflow
-// - Dequeue until underflow
-// - peek() usage
+// Goal: show enqueue, dequeue, peek, display, and empty/full behaviors.
+//
+// NOTE about the limitation:
+// If you keep enqueueing and dequeueing many times, you can hit overflow even
+// when there are "gaps" at the beginning of the array (linear queue limitation).
+// A circular queue fixes that. [1](https://cplusplus.com/doc/tutorial/dynamic/)[3](https://intellipaat.com/blog/new-and-delete-operators-in-cpp/)
 // ============================================================================
-/*
+
 int main() {
     SimpleQueue q;
 
     q.enqueue(10);
     q.enqueue(20);
     q.enqueue(30);
+    q.enqueue(40);
+
     q.display();
 
     cout << "Peek (front): " << q.peek() << endl;
@@ -197,39 +218,37 @@ int main() {
     q.dequeue();
     q.display();
 
-    // Fill up queue
-    for (int i = 40; i <= 120; i += 10) {
-        q.enqueue(i);
-    }
+    q.dequeue();
     q.display();
 
-    // Dequeue everything
+    q.enqueue(50);
+    q.display();
+
+    // Uncomment to demonstrate underflow:
+    /*
     while (!q.isEmpty()) {
         q.dequeue();
     }
-
-    // Underflow example
-    q.dequeue();
+    q.dequeue(); // underflow example
+    */
 
     return 0;
 }
-*/
 
 
 /*
 ===============================================================================
 APA-STYLE REFERENCES (Linked)
 -------------------------------------------------------------------------------
-GeeksforGeeks. (2025, September 20). Queue using array – simple implementation.
-[1](https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/)
+GeeksforGeeks. (2025, September 20). Queue using array – simple implementation.https://www.geeksforgeeks.org/dsa/array-implementation-of-queue-simple/ [1](https://cplusplus.com/doc/tutorial/dynamic/)
 
 ProgramGuru. (n.d.). Queues – FIFO data structure.
-[2](https://programguru.org/programming/queues/)
+https://programguru.org/programming/queues/ [3](https://intellipaat.com/blog/new-and-delete-operators-in-cpp/)
 
 Tutorialspoint. (n.d.). Queue data structure (enqueue/dequeue, front/rear pointers).
-[3](https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm)
+https://www.tutorialspoint.com/data_structures_algorithms/dsa_queue.htm [2](https://en.cppreference.com/w/cpp/language/namespace.html)
 
-Stack Overflow. (2024). What’s the problem with “using namespace std;”?
-[5](https://stackoverflow.com/questions/1452721/whats-the-problem-with-using-namespace-std)
+Stack Overflow. (2024). What's the problem with "using namespace std;"?
+https://stackoverflow.com/questions/1452721/whats-the-problem-with-using-namespace-std [4](https://stackoverflow.com/questions/4872373/why-is-including-using-namespace-into-a-header-file-a-bad-idea-in-c)
 ===============================================================================
 */

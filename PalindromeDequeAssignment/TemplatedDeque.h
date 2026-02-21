@@ -1,24 +1,32 @@
-# Templated Deque Implementation
+# Templated Deque Header File
 
 #ifndef TEMPLATED_DEQUE_H
 #define TEMPLATED_DEQUE_H
 
+#include <iostream>
+#include <memory>
+
+// Node structure for doubly linked list
 template <typename T>
-class Deque {
+struct Node {
+    T data;
+    Node* next;
+    Node* prev;
+    Node(T value) : data(value), next(nullptr), prev(nullptr) {}  
+};
+
+// Templated Deque class
+template <typename T>
+class TemplatedDeque {
 private:
-    struct Node {
-        T data;
-        Node* prev;
-        Node* next;
-        Node(T value) : data(value), prev(nullptr), next(nullptr) {}
-    };
-    Node* front;
-    Node* rear;
+    Node<T>* front;
+    Node<T>* rear;
 public:
-    Deque() : front(nullptr), rear(nullptr) {}
+    TemplatedDeque() : front(nullptr), rear(nullptr) {}
+    ~TemplatedDeque() { while (!isEmpty()) deleteFront(); }
 
     void insertFront(T value) {
-        Node* newNode = new Node(value);
+        Node<T>* newNode = new Node<T>(value);
         if (isEmpty()) {
             front = rear = newNode;
         } else {
@@ -29,7 +37,7 @@ public:
     }
 
     void insertRear(T value) {
-        Node* newNode = new Node(value);
+        Node<T>* newNode = new Node<T>(value);
         if (isEmpty()) {
             front = rear = newNode;
         } else {
@@ -39,26 +47,28 @@ public:
         }
     }
 
-    T deleteFront() {
-        if (isEmpty()) throw std::runtime_error("Deque is empty");
-        T value = front->data;
-        Node* temp = front;
-        front = front->next;
-        if (front) front->prev = nullptr;
-        else rear = nullptr;
-        delete temp;
-        return value;
+    void deleteFront() {
+        if (!isEmpty()) {
+            Node<T>* temp = front;
+            front = front->next;
+            if (front)
+                front->prev = nullptr;
+            else
+                rear = nullptr;
+            delete temp;
+        }
     }
 
-    T deleteRear() {
-        if (isEmpty()) throw std::runtime_error("Deque is empty");
-        T value = rear->data;
-        Node* temp = rear;
-        rear = rear->prev;
-        if (rear) rear->next = nullptr;
-        else front = nullptr;
-        delete temp;
-        return value;
+    void deleteRear() {
+        if (!isEmpty()) {
+            Node<T>* temp = rear;
+            rear = rear->prev;
+            if (rear)
+                rear->next = nullptr;
+            else
+                front = nullptr;
+            delete temp;
+        }
     }
 
     bool isEmpty() const {

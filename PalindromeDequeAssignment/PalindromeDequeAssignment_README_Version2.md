@@ -12,7 +12,7 @@ Palindrome checking compares the **front** and **back** characters repeatedly.
 
 ## Build
 ```bash
-g++ -std=c++17 -O2 -Wall -Wextra -pedantic PalindromeDequeAssignment/main.cpp -o palindrome
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic PalindromeDequeAssignment/PalindromeDequeAssignment_main_Version2.cpp -o palindrome
 ```
 
 ## Run
